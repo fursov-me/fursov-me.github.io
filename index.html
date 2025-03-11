@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ товаров</title>
+    <!-- Подключение Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2 class="mb-4">Заказ товаров</h2>
+
+        <!-- Блок для ввода уникального ID -->
+        <div class="mb-4">
+            <label for="uniqueIdInput" class="form-label">Введите уникальный ID:</label>
+            <div class="input-group">
+                <input type="text" id="uniqueIdInput" class="form-control" placeholder="Ваш уникальный ID">
+                <button class="btn btn-secondary" onclick="saveUniqueId()">Сохранить ID</button>
+            </div>
+        </div>
+
+        <table class="table table-bordered table-striped" id="orderTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Код</th>
+                    <th>Описание</th>
+                    <th>Единица измерения</th>
+                    <th>Количество</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DSshisha034</td>
+                    <td>Кальян "NEO" чёрный</td>
+                    <td>шт</td>
+                    <td><input type="number" name="quantity_DSshisha034" class="form-control" value="0" min="0" onchange="saveQuantity('quantity_DSshisha034', this.value)"></td>
+                </tr>
+                <tr>
+                    <td>DSivase001</td>
+                    <td>Колба "INTRO”</td>
+                    <td>шт</td>
+                    <td><input type="number" name="quantity_DSivase001" class="form-control" value="0" min="0" onchange="saveQuantity('quantity_DSivase001', this.value)"></td>
+                </tr>
+                <tr>
+                    <td>DScleanLIQUID150</td>
+                    <td>Жидкость для чистки кальяна DARKSIDE 150 мл</td>
+                    <td>шт</td>
+                    <td><input type="number" name="quantity_DScleanLIQUID150" class="form-control" value="0" min="0" onchange="saveQuantity('quantity_DScleanLIQUID150', this.value)"></td>
+                </tr>
+                <tr>
+                    <td>DScleanLIQUID500</td>
+                    <td>Жидкость для чистки кальяна DARKSIDE 500 мл</td>
+                    <td>шт</td>
+                    <td><input type="number" name="quantity_DScleanLIQUID500" class="form-control" value="0" min="0" onchange="saveQuantity('quantity_DScleanLIQUID500', this.value)"></td>
+                </tr>
+                <tr>
+                    <td>DSHeater</td>
+                    <td>Контроллер жара "D-HEATER"</td>
+                    <td>шт</td>
+                    <td><input type="number" name="quantity_DSHeater" class="form-control" value="0" min="0" onchange="saveQuantity('quantity_DSHeater', this.value)"></td>
+                </tr>
+                <!-- Продолжайте добавлять товары аналогичным образом -->
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-primary" onclick="submitOrder()">Заказать</button>
+    </div>
+
+    <script>
+        // Функция для сохранения уникального ID в localStorage
+        function saveUniqueId() {
+            var uniqueId = document.getElementById("uniqueIdInput").value;
+            if (uniqueId) {
+                localStorage.setItem("uniqueId", uniqueId);
+                alert("ID сохранён!");
+            } else {
+                alert("Введите уникальный ID.");
+            }
+        }
+
+        // Функция для сохранения количества в localStorage
+        function saveQuantity(key, value) {
+            localStorage.setItem(key, value);
+        }
+
+        // Восстановление данных из localStorage при загрузке страницы
+        window.onload = function() {
+            // Восстановление уникального ID
+            var savedId = localStorage.getItem("uniqueId");
+            if (savedId) {
+                document.getElementById("uniqueIdInput").value = savedId;
+            }
+
+            // Восстановление значений количества для каждого input
+            var quantities = ["quantity_DSshisha034", "quantity_DSivase001", "quantity_DScleanLIQUID150", "quantity_DScleanLIQUID500", "quantity_DSHeater"];
+            quantities.forEach(function(key) {
+                var savedQuantity = localStorage.getItem(key);
+                if (savedQuantity !== null) {
+                    document.getElementsByName(key)[0].value = savedQuantity;
+                }
+            });
+        };
+
+        function submitOrder() {
+            // Получение уникального ID для имени файла
+            var uniqueId = document.getElementById("uniqueIdInput").value || "order";
+            
+            // Получение таблицы и данных
+            var table = document.getElementById("orderTable");
+            var rows = table.getElementsByTagName("tr");
+            var selectedItems = [];
+
+            // Перебор строк таблицы для проверки количества
+            for (var i = 1; i < rows.length; i++) { // Пропускаем заголовок
+                var code = rows[i].cells[0].innerText;
+                var description = rows[i].cells[1].innerText;
+                var unit = rows[i].cells[2].innerText;
+                var quantity = rows[i].getElementsByTagName("input")[0].value; // Значение input для количества
+                
+                if (quantity > 0) {
+                    selectedItems.push([code, description, unit, quantity]);
+                }
+            }
+
+            // Если есть выбранные позиции
+            if (selectedItems.length > 0) {
+                var csvContent = "Код,Описание,Единица измерения,Количество\n";
+                selectedItems.forEach(function(rowArray) {
+                    var row = rowArray.join(",");
+                    csvContent += row + "\\n";
+                });
+
+                // Преобразование текста в Blob с кодировкой Windows-1251
+                var blob = new Blob([csvContent], { type: 'text/csv;charset=windows-1251;' });
+                var link = document.createElement("a");
+                var url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", uniqueId + ".csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                alert("Пожалуйста, выберите хотя бы одну позицию.");
+            }
+        }
+    </script>
+
+    <!-- Подключение JS Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
